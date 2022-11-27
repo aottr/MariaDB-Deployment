@@ -1,0 +1,33 @@
+version: '3.9'
+services:
+  mariadb:
+    image: mariadb:${MARIADB_VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - '${MARIADB_HOST:-0.0.0.0}:3306:3306'
+    volumes:
+      - type: bind
+        source: ${BACKUP_BIND:-/opt/mariadb/backup}
+        target: /var/lib/mysql
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '200k'
+        max-file: '8'
+    healthcheck:
+      test: "/usr/bin/mysql --user=${DATABASE_USER} --password=${DATABASE_PASSWORD} --execute \"SHOW DATABASES;\""
+      interval: 10s
+      timeout: 1s
+      retries: 6
+    networks:
+      - database
+    environment:
+      MARIADB_DATABASE: ${DATABASE_NAME:?Database Name empty}
+      MARIADB_USER: ${DATABASE_USER:?Usermame empty}
+      MARIADB_PASSWORD: ${DATABASE_PASSWORD:?Password empty}
+      MARIADB_RANDOM_ROOT_PASSWORD: 'yes'
+
+networks:
+  database:
+    name: database-net
+    driver: bridge
